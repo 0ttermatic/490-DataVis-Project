@@ -84,50 +84,87 @@ function CreateChampionMap(data)
 }
 
 
-function SortChampsToRoles(CountOfChampions) {
-    const sortedRoles = {
-        "Enchanters": [],
-        "Catchers": [],
-        "Engage": [],
-        "Peel": []
-    };
 
-    // Loop through each champion and their count
-    for (const [champion, count] of Object.entries(CountOfChampions)) {
-        if (ChampionRoles[champion]) {  // Check if the champion has roles
-            // Log the champion and their roles for debugging
-            console.log(`Champion: ${champion}, Roles: ${ChampionRoles[champion]}`);
-            
-            // For each champion, iterate over all their roles
-            ChampionRoles[champion].forEach(role => {
-                switch (role) {
-                    case "Enchanter":
-                        sortedRoles["Enchanters"].push({ champion, count });
-                        break;
 
-                    case "Catcher":
-                        sortedRoles["Catchers"].push({ champion, count });
-                        break;
+function extractCategoryDetails(data) {
+    const categoryDetails = [];
 
-                    case "Vanguard":
-                        sortedRoles["Engage"].push({ champion, count });
-                        break;
+    data.forEach(game => {
+        const { gameDurationMinutes, championName } = game;
+        const winLoss = game["Win/Loss"]; // Access the property with brackets
 
-                    case "Warden":
-                        sortedRoles["Peel"].push({ champion, count });
-                        break;
+        // Convert game duration to minutes
+        const gameLength = Math.floor(gameDurationMinutes);
 
-                    default:
-                        break;
-                }
+        // Check if the champion has defined roles
+        if (ChampionRoles[championName]) {
+            ChampionRoles[championName].forEach(category => {
+                categoryDetails.push({
+                    category,
+                    win: winLoss === "Win", // Convert to a boolean for clarity
+                    gameLength
+                });
             });
-        }
-    }
+        } 
+    });
 
-    // Sort each role by count in descending order
-    for (let role in sortedRoles) {
-        sortedRoles[role].sort((a, b) => b.count - a.count);
-    }
-
-    return sortedRoles;
+    return categoryDetails;
 }
+
+
+
+
+function processWinRateData(categoryDetails) {
+    const categories = ["15-20 min", "21-25 min", "26-31 min", "32-37 min", "38+"];
+    
+    // Function to process data for specific categories
+    function getCategoryWinRateData(filteredCategoryDetails) {
+        return categories.map(category => {
+            // Filter data for the specified category and game length
+            const categoryGames = filteredCategoryDetails.filter(game => {
+                const gameLength = game.gameLength;
+
+                // Filter games based on the length category
+                if (category === "15-20 min") return gameLength >= 15 && gameLength <= 20;
+                if (category === "21-25 min") return gameLength >= 21 && gameLength <= 25;
+                if (category === "26-31 min") return gameLength >= 26 && gameLength <= 31;
+                if (category === "32-37 min") return gameLength >= 32 && gameLength <= 37;
+                if (category === "38+") return gameLength >= 38;
+
+                return false;
+            });
+
+            // Calculate the win rate for this category
+            const totalGames = categoryGames.length;
+            console.log(`Total games in ${category}: ${totalGames}`);
+
+            // Count wins (now checking for true value for win)
+            const wins = categoryGames.filter(game => game.win === true).length;
+            console.log(`Wins in ${category}: ${wins}`);
+
+            const winRate = totalGames > 0 ? wins / totalGames : 0;
+
+            return {
+                category: category,
+                winRate: winRate
+            };
+        });
+    }
+
+    // Filter for "Enchanter" or "Warden"
+    const enchanterOrWardenGames = categoryDetails.filter(game => game.category === "Enchanter" || game.category === "Warden");
+    const enchanterOrWardenData = getCategoryWinRateData(enchanterOrWardenGames);
+
+    // Filter for "Catcher" or "Vanguard"
+    const catcherOrVanguardGames = categoryDetails.filter(game => game.category === "Catcher" || game.category === "Vanguard");
+    const catcherOrVanguardData = getCategoryWinRateData(catcherOrVanguardGames);
+
+    // Combine the results from both sets
+    return {
+        enchanterOrWardenData,
+        catcherOrVanguardData
+    };
+}
+
+
+

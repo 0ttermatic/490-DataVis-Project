@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Champion Data</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <!-- Other HTML content -->
+    <div id="line-graph">
+        <h2>Category Details</h2>
+    </div>
+
+    <!-- Your script tags -->
+    <script src="functions.js"></script>
+    <script>
+        const jsonPath = '../Data_Gathering/match_data_FINAL.json'
+
+        async function displayWinRateGraph() {
+    const data = await JsonToVariable(jsonPath); // Get the raw data
+
+    const categoryDetails = extractCategoryDetails(data); // Extract category details
+    console.log(categoryDetails)
+
+
+
+    const winRateData = processWinRateData(categoryDetails); // Process data for win rates
+    console.log(winRateData)
+
+
+  
+}
+
+// Call this function to display the graph
+displayWinRateGraph();
+
+
+    </script>
+</body>
+</html>
