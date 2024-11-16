@@ -34,7 +34,30 @@ const ChampionRoles = {
     "Poppy": ["Warden"],
     "Renata": ["Warden"],
     "TahmKench": ["Warden"],
-  
+
+
+    "Aphelios": ["ADC"],
+    "Ashe": ["ADC"],
+    "Caitlyn": ["ADC"],
+    "Draven": ["ADC"],
+    "Ezreal": ["ADC"],
+    "jhin": ["ADC"],
+    "Jinx": ["ADC"],
+    "Kai'sa": ["ADC"],
+    "Kalista": ["ADC"],
+    "Kog'Maw": ["ADC"],
+    "MissFortune": ["ADC"],
+    "Samira": ["ADC"],
+    "Seraphine" : ["ADC"],
+    "Smolder": ["ADC"],
+    "Sivir": ["ADC"],
+    "Tristana": ["ADC"],
+    "Twitch": ["ADC"],
+    "Varus": ["ADC"],
+    "Vayne": ["ADC"],
+    "Xayah": ["ADC"],
+    "Zeri": ["ADC"],
+
 };
 
 //Create variable to be passed around to other functions
@@ -159,10 +182,16 @@ function processWinRateData(categoryDetails) {
     const catcherOrVanguardGames = categoryDetails.filter(game => game.category === "Catcher" || game.category === "Vanguard");
     const catcherOrVanguardData = getCategoryWinRateData(catcherOrVanguardGames);
 
+     // Filter for "ADC"
+     const ADCGames = categoryDetails.filter(game => game.category === "ADC");
+     const ADCData = getCategoryWinRateData(ADCGames);
+     
+     
     // Combine the results from both sets
     return {
         enchanterOrWardenData,
-        catcherOrVanguardData
+        catcherOrVanguardData,
+        ADCData
     };
 }
 

@@ -9,7 +9,7 @@
 <body>
     <!-- Other HTML content -->
     <div id="line-graph">
-        <h2>Category Details</h2>
+        <h2>Prototype(s)</h2>
     </div>
 
     <!-- Your script tags -->
@@ -17,23 +17,138 @@
     <script>
         const jsonPath = '../Data_Gathering/match_data_FINAL.json'
 
-        async function displayWinRateGraph() {
-    const data = await JsonToVariable(jsonPath); // Get the raw data
+            async function createLineChart(path) 
+            {
+                const data = await JsonToVariable(path); // Get the raw data
 
-    const categoryDetails = extractCategoryDetails(data); // Extract category details
-    console.log(categoryDetails)
+                const categoryDetails = extractCategoryDetails(data); // Extract category details
+                console.log(categoryDetails);
+
+                const winRateData = processWinRateData(categoryDetails); // Process data for win rates
+                console.log(winRateData);
+
+                const width = 800;
+                const height = 400;
+                const margin = { top: 20, bottom: 55, left: 70, right: 20 };
+
+                // Data variables
+                const EnchanterWardenData = winRateData.enchanterOrWardenData;
+                const CatcherVanguardData = winRateData.catcherOrVanguardData;
+                const AttackDamageData = winRateData.ADCData;
+
+                // x and y scales
+                const xScale = d3.scalePoint()
+                    .domain(EnchanterWardenData.map(x => x.category)) 
+                    .range([0, width])
+                    .padding(0.5);
+
+                const yScale = d3.scaleLinear()
+                    .domain([0, 1]) 
+                    .range([height, 0]);
+
+                // Line generator
+                const LineGraph = d3.line()
+                    .x(d => xScale(d.category))
+                    .y(d => yScale(d.winRate));
+
+                // Create SVG container
+                const svg = d3.select("#line-graph")
+                    .append("svg")
+                    .attr("width", width + margin.left + margin.right)
+                    .attr("height", height + margin.top + margin.bottom)
+                    .append("g")
+                    .attr("transform", `translate(${margin.left},${margin.top})`);
+
+                // Add x-axis
+                svg.append("g")
+                    .attr("transform", `translate(0,${height})`)
+                    .call(d3.axisBottom(xScale));
+
+                // Add y-axis
+                svg.append("g")
+                    .call(d3.axisLeft(yScale));
+
+                // Add line for Enchanter/Warden
+                svg.append("path")
+                    .datum(EnchanterWardenData) 
+                    .attr("fill", "none")
+                    .attr("stroke", "aqua")
+                    .attr("d", LineGraph); 
+
+                // Add line for Catcher/Vanguard
+                svg.append("path")
+                    .datum(CatcherVanguardData) 
+                    .attr("fill", "none")
+                    .attr("stroke", "violet")
+                    .attr("d", LineGraph); 
+
+                // Add line for ADC
+                svg.append("path")
+                    .datum(AttackDamageData) 
+                    .attr("fill", "none")
+                    .attr("stroke", "Maroon")
+                    .attr("d", LineGraph); 
 
 
 
-    const winRateData = processWinRateData(categoryDetails); // Process data for win rates
-    console.log(winRateData)
+                // Add circles for data points 
+                [EnchanterWardenData, CatcherVanguardData, AttackDamageData].forEach((data, index) => {
+                svg.selectAll(`.circle-${index}`)
+                    .data(data)
+                    .enter()
+                    .append("circle")
+                    .attr("cx", d => xScale(d.category))
+                    .attr("cy", d => yScale(d.winRate))
+                    .attr("r", 3.5)
+                    .attr("fill", index === 0 ? "aqua" : index === 1 ? "violet" : "maroon");
+                });
 
 
-  
-}
+                //Add legend
+                svg.append("text")
+                    .attr("x", 50)
+                    .attr("y", 30)
+                    .attr("fill", "blue")
+                    .text(":  Enchanters and Peel")
 
-// Call this function to display the graph
-displayWinRateGraph();
+                svg.append("circle")
+                    .attr("cx", 43)
+                    .attr("cy", 26)
+                    .attr("r", 5)
+                    .attr("fill", "aqua")
+
+
+
+                    svg.append("text")
+                    .attr("x", 50)
+                    .attr("y", 45)
+                    .attr("fill", "purple")
+                    .text(":  Engage and Catch")
+
+                svg.append("circle")
+                    .attr("cx", 43)
+                    .attr("cy", 41)
+                    .attr("r", 5)
+                    .attr("fill", "violet")
+
+
+
+                    svg.append("text")
+                    .attr("x", 50)
+                    .attr("y", 15)
+                    .attr("fill", "Red")
+                    .text(":  Attack Damage Carry")
+
+                svg.append("circle")
+                    .attr("cx", 43)
+                    .attr("cy", 11)
+                    .attr("r", 5)
+                    .attr("fill", "Maroon")
+
+            }
+
+// Display graph
+createLineChart(jsonPath);
 
 
     </script>

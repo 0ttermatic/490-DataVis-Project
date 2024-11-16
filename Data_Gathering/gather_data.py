@@ -165,9 +165,7 @@ def GatherDataFromMatches():
 
 
 
-
-
-def SaveToFile:
+def SaveToFile():
 
     # Save the match data summary to JSON
     filename = 'match_data.json'
