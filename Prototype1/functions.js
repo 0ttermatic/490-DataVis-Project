@@ -108,7 +108,9 @@ function CreateChampionMap(data)
 
 
 
-
+//Extract the champion data to be used by d3 functions
+// * data:                  the processed .json file
+// - categoryDetails:       creates an array with category, win, and gamelength if the champion is in the ChampionRoles list at the top of the file
 function extractCategoryDetails(data) {
     const categoryDetails = [];
 
@@ -136,7 +138,11 @@ function extractCategoryDetails(data) {
 
 
 
-
+//Extract the champion data to be used by d3 functions
+// * categoryDetails:                  the map of champions to their roles and t
+// - EnchanterWardenData:   Data on the champions in the Enchanter/Warden group at the top of this file
+// - CatcherVanguardData:   Data on the champions in the Catcher/Vanguard group at the top of this file
+// - ADCData:               Data on the champions in the ADC group at the top of this file
 function processWinRateData(categoryDetails) {
     const categories = ["15-20 min", "21-25 min", "26-31 min", "32-37 min", "38+"];
     

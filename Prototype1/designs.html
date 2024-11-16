@@ -10,8 +10,26 @@
     <!-- Other HTML content -->
     <div id="line-graph">
         <h2>Prototype(s)</h2>
+        <p> This is my prototype to show my winrates for the type of champion I am playing vs the game length time</p>
+        <p> I will add axis labels, a box for the legend, and a way to hover over the labels in the legend to highlight/bring its associated line to the front, and also show the exact win rates on each bubble for that category (ex. "63.23%")</p>
     </div>
-
+    <div id="image-container">
+        <div class="image-block">
+            <img src="images/BadPrototype.png" alt="Image 1" class="image">
+            <p class="image-text">This is a simple idea to output some match statistics based on the type of champion I am playing.</p>
+            <p> This would be an example of a bad sketch idea by itself since this could be fulfilled with a few query searches from a database. </p>
+            <p> There is also no interaction here and is essentially an "image".</p>
+        </div>
+        <div class="image-block">
+            <img src="images/GoodPrototype.png" alt="Image 2" class="image">
+            <p class="image-text">This is an example of a better idea for my final design.</p>
+            <p> I updated it from my intital project idea and I think this will work better.</p>
+            <p> When playing the game, you are either on Red Side or blue side.  The map is basically symetrical but the death locations should differ heavily based on what side you are on.</p>
+            <p> I want to be able to change the view of deaths based on the type of champion I am playing since I feel like this could impact the average location of my deaths (you can die more than once per game).</p>
+            <p> I would also like to add a transition when switching from one champion category to another champion category to more easily see the differences between the death locations.</p>
+            <p> Also, when hovering over the death location, I would like it to output the percentage of deaths that happen around that location and also increase the size of the circle to show this as well.</p>
+        </div>
+    </div>
     <!-- Your script tags -->
     <script src="functions.js"></script>
     <script>
@@ -119,7 +137,7 @@
 
 
 
-                    svg.append("text")
+                svg.append("text")
                     .attr("x", 50)
                     .attr("y", 45)
                     .attr("fill", "purple")
@@ -133,7 +151,7 @@
 
 
 
-                    svg.append("text")
+                svg.append("text")
                     .attr("x", 50)
                     .attr("y", 15)
                     .attr("fill", "Red")
@@ -147,8 +165,9 @@
 
             }
 
-// Display graph
-createLineChart(jsonPath);
+    // Display graph
+    createLineChart(jsonPath);
+
 
 
     </script>
