@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Death Locations</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="../javascript/functions.js"></script> 
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #1c1c1c;
+        }
+        svg {
+            border: 1px solid #ccc;
+        }
+        .death-marker {
+            fill: red;
+            stroke: black;
+            stroke-width: 1;
+            font-size: 14px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <script>
+        // Path to the .json file
+        const PathToFile = "../Data_Gathering/match_data_FINAL.json"; 
+    
+        // Map Width and Height
+        const MapHeight = 1000;
+        const MapWidth = 1000;
+    
+        // Load and process the data
+        JsonToVariable(PathToFile).then(data => {
+    
+    
+            // Extract death locations and the side from the data
+            const deathLocationsWithSide = data.map(entry => {
+                return entry.deathLocations.map(loc => ({
+                    x: loc.x,
+                    y: loc.y,
+                    side: entry.side // Attach the side value 
+                }));
+            }).flat();
+ 
+            console.log("Death Locations with Side:", deathLocationsWithSide); 
+           
+            // Scale the coordinates 
+            const scaleCoordinates = (loc) => ({
+                x: (loc.x / 15000) * MapWidth, // Scale to proper map size
+                y: MapHeight - (loc.y / 15000) * MapHeight,
+                side: loc.side
+            });
+    
+            const scaledLocations = deathLocationsWithSide.map(scaleCoordinates);
+    
+            // Plot death markers
+            const svg = d3.select("body")
+                .append("svg")
+                .attr("width", MapWidth)
+                .attr("height", MapHeight);
+    
+            svg.append("image")
+                .attr("href", "Summoner's_Rift_Minimap.png")
+                .attr("width", MapWidth)
+                .attr("height", MapHeight);
+    
+            svg.selectAll(".death-marker")
+            .data(scaledLocations)
+            .enter()
+            .append("text")
+            .attr("class", "death-marker")
+            .attr("x", d => d.x)
+            .attr("y", d => d.y)
+            .attr("dy", "-0.5em")
+            .attr("text-anchor", "middle")
+            .style("fill", function(d) {
+                // Check side and return color
+                console.log("Side for this death marker:", d.side);  
+                return d.side && d.side.toLowerCase() === "blue" ? "blue" : "red";
+            })
+            .text("X");
+
+        }).catch(error => console.error("Error loading or processing data:", error));
+    </script>
+</body>
+</html>

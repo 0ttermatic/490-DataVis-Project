@@ -69,7 +69,7 @@ async function JsonToVariable(PathToFile) {
         return data;
     } catch (error) {
         console.error('Error loading JSON file:', error);
-        return null;  // Return null if an error occurs
+        return null;  
     }
 }
 
@@ -126,7 +126,7 @@ function extractCategoryDetails(data) {
             ChampionRoles[championName].forEach(category => {
                 categoryDetails.push({
                     category,
-                    win: winLoss === "Win", // Convert to a boolean for clarity
+                    win: winLoss === "Win", 
                     gameLength
                 });
             });
@@ -167,7 +167,7 @@ function processWinRateData(categoryDetails) {
             const totalGames = categoryGames.length;
             console.log(`Total games in ${category}: ${totalGames}`);
 
-            // Count wins (now checking for true value for win)
+            // Count wins 
             const wins = categoryGames.filter(game => game.win === true).length;
             console.log(`Wins in ${category}: ${wins}`);
 
@@ -198,6 +198,37 @@ function processWinRateData(categoryDetails) {
         enchanterOrWardenData,
         catcherOrVanguardData,
         ADCData
+    };
+}
+
+
+
+
+
+function calculateSidePercentage(data) {
+    let redCount = 0;
+    let blueCount = 0;
+
+    // Loop through each game entry to count the sides
+    data.forEach(game => {
+        if (game.side === "Red") {
+            redCount++;
+        } else if (game.side === "Blue") {
+            blueCount++;
+        }
+    });
+
+    // Calculate total games
+    const totalGames = redCount + blueCount;
+
+    // Calculate the percentage for red and blue sides
+    const redPercentage = (redCount / totalGames) * 100;
+    const bluePercentage = (blueCount / totalGames) * 100;
+
+    
+    return {
+        redPercentage: redPercentage.toFixed(2), 
+        bluePercentage: bluePercentage.toFixed(2)
     };
 }
 
