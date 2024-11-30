@@ -11,6 +11,8 @@ const ChampionRoles = {
     "Soraka": ["Enchanter"],
     "Taric": ["Enchanter", "Warden"],
     "Yuumi": ["Enchanter"],
+    "Zilean": ["Enchanter"],
+
 
     "Bard": ["Catcher"],
     "Blitzcrank": ["Catcher", "Vanguard"],  
@@ -18,10 +20,13 @@ const ChampionRoles = {
     "Jhin": ["Catcher"],
     "Morgana": ["Catcher"],
     "Neeko": ["Catcher"],
+    "Pantheon": ["Catcher"],
     "Pyke": ["Catcher"],
     "Rakan": ["Catcher", "Vanguard"], 
     "Thresh": ["Catcher", "Warden"],  
     "Zyra": ["Catcher"],
+    "Swain": ["Catcher"],
+
 
     "Alistar": ["Vanguard", "Warden"],  
     "Amumu": ["Vanguard"],
@@ -30,6 +35,7 @@ const ChampionRoles = {
     "Nautilus": ["Vanguard"],
     "Rell": ["Vanguard"],
 
+    
     "Braum": ["Warden"],
     "Poppy": ["Warden"],
     "Renata": ["Warden"],
@@ -43,9 +49,9 @@ const ChampionRoles = {
     "Ezreal": ["ADC"],
     "jhin": ["ADC"],
     "Jinx": ["ADC"],
-    "Kai'sa": ["ADC"],
+    "Kaisa": ["ADC"],
     "Kalista": ["ADC"],
-    "Kog'Maw": ["ADC"],
+    "KogMaw": ["ADC"],
     "MissFortune": ["ADC"],
     "Samira": ["ADC"],
     "Seraphine" : ["ADC"],

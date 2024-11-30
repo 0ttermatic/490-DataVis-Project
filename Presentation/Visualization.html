@@ -19,7 +19,6 @@
             border: 1px solid #ccc;
         }
         .death-marker {
-            fill: red;
             stroke: black;
             stroke-width: 1;
             font-size: 14px;
@@ -33,9 +32,21 @@
         const PathToFile = "../Data_Gathering/match_data_FINAL.json"; 
     
         // Map Width and Height
-        const MapHeight = 1000;
-        const MapWidth = 1000;
-    
+        const MapHeight = 1020;
+        const MapWidth = 1020;
+ 
+
+        const GridSize = 34; // Grid size 
+
+        const numCols = MapWidth / GridSize; // Number of columns in the grid
+        const numRows = MapHeight / GridSize; // Number of rows in the grid
+
+        // Color scale for the heatmap
+        const colorScale = d3.scaleLinear()
+        .domain([6, 12, 15, 18, 30, 69]) // Domain 
+        .range(["rgba(255, 255, 255, 0)", "rgba(255, 210, 0, 1)", "rgba(255, 150, 0, .8)", "rgba(255, 130, 0, .8)", "rgba(255, 75, 0, .8)", "rgba(255, 0, 0, 1)"]); // RGBA with capacity
+
+
         // Load and process the data
         JsonToVariable(PathToFile).then(data => {
     
@@ -43,24 +54,43 @@
             // Extract death locations and the side from the data
             const deathLocationsWithSide = data.map(entry => {
                 return entry.deathLocations.map(loc => ({
-                    x: loc.x,
-                    y: loc.y,
-                    side: entry.side // Attach the side value 
+                    x: loc.x, // Attach x coordinate
+                    y: loc.y, // Attach y coordinate
+                    side: entry.side, // Attach side value 
+                    championName: entry.championName // Attach champion name
                 }));
             }).flat();
  
-            console.log("Death Locations with Side:", deathLocationsWithSide); 
            
             // Scale the coordinates 
-            const scaleCoordinates = (loc) => ({
-                x: (loc.x / 15000) * MapWidth, // Scale to proper map size
-                y: MapHeight - (loc.y / 15000) * MapHeight,
-                side: loc.side
-            });
-    
+            const scaleCoordinates = (loc) => {
+                const xScaled = (loc.x / 15000) * MapWidth;
+                const yScaled = MapHeight - (loc.y / 15000) * MapHeight;
+                const row = Math.floor(yScaled / GridSize);
+                const col = Math.floor(xScaled / GridSize);
+                return {
+                    x: xScaled,
+                    y: yScaled,
+                    side: loc.side,
+                    championName: loc.championName,
+                    row: row,
+                    col: col
+                };
+            }; 
+
             const scaledLocations = deathLocationsWithSide.map(scaleCoordinates);
-    
-            // Plot death markers
+            console.log("Scaled Locations:", scaledLocations);
+
+
+            const deathCounts = Array.from({ length: numRows }, () => Array(numCols).fill(0));
+            // Number of deaths in each grid cell
+            scaledLocations.forEach(loc => {
+                const row = Math.floor(loc.y / GridSize);
+                const col = Math.floor(loc.x / GridSize);
+                deathCounts[row][col]++;
+            });
+
+            // Plot the image of Summoner's Rift
             const svg = d3.select("body")
                 .append("svg")
                 .attr("width", MapWidth)
@@ -71,23 +101,36 @@
                 .attr("width", MapWidth)
                 .attr("height", MapHeight);
     
-            svg.selectAll(".death-marker")
-            .data(scaledLocations)
-            .enter()
-            .append("text")
-            .attr("class", "death-marker")
-            .attr("x", d => d.x)
-            .attr("y", d => d.y)
-            .attr("dy", "-0.5em")
-            .attr("text-anchor", "middle")
-            .style("fill", function(d) {
-                // Check side and return color
-                console.log("Side for this death marker:", d.side);  
-                return d.side && d.side.toLowerCase() === "blue" ? "blue" : "red";
-            })
-            .text("X");
+
+
+
+            // Plot the grid cells (heatmap) 
+            svg.selectAll(".grid-cell")
+                .data(d3.range(numRows * numCols))
+                .enter()
+                .append("rect")
+                .attr("class", "grid-cell")
+                .attr("x", d => (d % numCols) * GridSize)
+                .attr("y", d => Math.floor(d / numCols) * GridSize)
+                .attr("width", GridSize)
+                .attr("height", GridSize)
+                .style("fill", d => {
+                    const row = Math.floor(d / numCols);
+                    const col = d % numCols;
+                    const deathCount = deathCounts[row][col];
+                    return colorScale(deathCount); // Set color based on the death count
+                })
+                .style("stroke", "none")
+                .style("filter", "blur(14px)"); // Apply blur effect
+
+
+
+            const unmappedChampions = scaledLocations.filter(d => !ChampionRoles[d.championName]);
+            console.log("Unmapped Champions:", unmappedChampions);
 
         }).catch(error => console.error("Error loading or processing data:", error));
+
+        
     </script>
 </body>
 </html>
