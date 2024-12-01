@@ -211,7 +211,7 @@ function processWinRateData(categoryDetails) {
 
 
 
-function calculateSidePercentage(data) {
+function CalculateSidePercentage(data) {
     let redCount = 0;
     let blueCount = 0;
 
@@ -237,6 +237,72 @@ function calculateSidePercentage(data) {
         bluePercentage: bluePercentage.toFixed(2)
     };
 }
+
+
+
+
+//Takes filtered .JSON file and gathers proper data from it
+// * data:                              the filtered .JSON file
+// * selectedCategories:                The catgegory(s) to filter for
+function filterDataBySelectedCategories(data, selectedCategories) {
+
+
+    const validRoles = {
+        "Enchanter/Warden": ["Enchanter", "Warden"],
+        "Catcher/Vanguard": ["Catcher", "Vanguard"],
+        "ADC": ["ADC"],
+    };
+
+    return data.filter(d => {
+        const roles = ChampionRoles[d.championName];
+        return roles && roles.some(role => selectedCategories.some(cat => validRoles[cat].includes(role)));
+    });
+}
+
+
+
+//Takes necessary information to update the heatmap when specific checkboxes are marked
+// * svg:                       the svg element
+// * colorScale:                the colorscale
+// * scaledLocations:           the locations of champions (passed to filterDataBySelectedCategories)
+// * numRows:                   number of rows to be used
+// * numCols:                   number of columns to be used
+// * selectedCategories:        The categories to check for (passed to filterDataBySelectedCategories)
+function updateHeatmap(colorScale, scaledLocations, numRows, numCols, selectedCategories) {
+    //DEBUGGING
+    console.log("scaledLocations inside updateHeatMap", scaledLocations);
+    console.log("selectedCategories inside updateheatMap", selectedCategories);
+
+    const filteredLocations = filterDataBySelectedCategories(scaledLocations, selectedCategories);
+
+    //DEBUGGING
+    console.log("filteredLocations inside updateHeatMap", filteredLocations);
+
+
+    // Recalculate death counts for the grid
+    const updatedDeathCounts = Array.from({ length: numRows }, () => Array(numCols).fill(0));
+    filteredLocations.forEach(loc => {
+        const row = loc.row;
+        const col = loc.col;
+        if (row < numRows && col < numCols) updatedDeathCounts[row][col]++;
+    });
+
+    // Update heatmap
+    svg.selectAll(".grid-cell")
+        .data(d3.range(numRows * numCols))
+        .style("fill", d => {
+            const row = Math.floor(d / numCols);
+            const col = d % numCols;
+            const deathCount = updatedDeathCounts[row][col];
+            return colorScale(deathCount);
+        });
+}
+
+
+
+
+
+
 
 
 
