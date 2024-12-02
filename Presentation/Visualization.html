@@ -43,7 +43,7 @@
         }
 
         #attack-damage-carry {
-            margin-top: 35px; 
+            margin-top: 20px; 
         }
     </style>
 </head>   
@@ -74,14 +74,16 @@
                 display: flex;
                 flex-direction: column;  
                 align-items: center;     
-                margin-bottom: 20px;        
+                margin-bottom: 20px;     
+                margin-right: 0px;   
             }
 
             #controls-label{
                 text-align: center;   
-                font-size: 40px;      
+                font-size: 30px;      
                 font-weight: bold;      
-                color: #7e7fdf;                     
+                color: #7e7fdf;  
+                margin-right: 80px;                   
             }
 
             #controls {
@@ -91,6 +93,7 @@
             padding: 10px;
             border-radius: 5px;
             font-family: Arial, sans-serif;
+            margin-right: 80px;
             }
 
             #graph-label {
@@ -98,25 +101,27 @@
                 font-size: 40px;      
                 font-weight: bold;    
                 margin-top: 90px;  
-                color: #aa4bf8;          
+                color: #aa4bf8;    
+                margin-right: 80px;      
             }
             #champion-stats-table {
             display: flex;
             flex-direction: column;
             margin-top: 0px;
-            margin-left: 115px;
+            margin-left: 10px;
             }
 
             #champion-stats {
-            width: 70%;
+            width: 40%;
             border-collapse: collapse;
             text-align: center;
             margin-top: 10px;
+            margin-left: 20px;
 
             }
 
             #champion-stats th, #champion-stats td {
-            padding: 20px;
+            padding: 10px;
             text-align: center;
             border: 1px solid #ddd;
             }
@@ -149,9 +154,9 @@
         const PathToFile = "../Data_Gathering/match_data_FINAL.json"; 
     
         // Map Width and Height
-        const MapHeight = 810;
-        const MapWidth = 810;
-        const GridSize = 30; // Grid size 
+        const MapHeight = 594;
+        const MapWidth = 594;
+        const GridSize = 22; // Grid size 
         const numCols = MapWidth / GridSize; // Number of columns in the grid
         const numRows = MapHeight / GridSize; // Number of rows in the grid
     
@@ -220,8 +225,8 @@
                 
                 svg.append("text")
                     .attr("x", (MapWidth / 2) - 25) 
-                    .attr("y", 35) 
-                    .attr("font-size", 35)  
+                    .attr("y", 25) 
+                    .attr("font-size", 25)  
                     .attr("text-anchor", "middle") 
                     .attr("fill", "magenta") 
                     .text("Map of Summoner's Rift"); 
