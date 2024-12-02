@@ -14,11 +14,19 @@
             height: 100vh;
             margin: 0;
             background-color: #1c1c1c;
-            padding-left: 300px;
+            padding-left: 50px;
+        }
+
+        #graph-label {
+                  text-align: center;   
+                font-size: 40px;      
+                font-weight: bold;      
+                color: #7e7fdf;               
         }
 
         svg {
             border: 1px solid #ccc;
+            display: block;
         }
 
         .death-marker {
@@ -28,67 +36,103 @@
             font-weight: bold;
         }
 
-        #controls {
-        position: absolute;
-        top: 90px;
-        left: 90px;
-        background: rgba(255, 255, 255, 0.8);
-        padding: 10px;
-        border-radius: 5px;
-        font-family: Arial, sans-serif;
-        }
-
         label {
             display: block;
             margin-bottom: 5px;
             color: #000;
         }
 
-        #adc-checkbox {
+        #attack-damage-carry {
             margin-top: 35px; 
         }
     </style>
 </head>   
 <body>
-    <!-- Checkboxes-->
-    <div id="controls">
-        <label><input type="checkbox" id="all-supports" checked> SUPPORT</label>
-        <label><input type="checkbox" id="enchanter-warden-checkbox" name = category value = "Enchanter Warden" checked> Enchanter/Warden</label>
-        <label><input type="checkbox" id="catcher-vanguard-checkbox" name = category value = "Catcher Vanguard" checked> Catcher/Vanguard</label>
-        <label><input type="checkbox" id="adc-checkbox" checked> ADC</label>
-        <label><input type="checkbox" id="attack-damage-carry" name = category value = "ADC" checked> attack-damage</label>
+    <div id = "graph-container">
+
+        <!-- Checkboxes-->
+        <div id = "controls-label">
+            Checkbox Control
+         </div>
+
+        <div id="controls">
+            <label><input type="checkbox" id="enchanter-warden-checkbox" name = category value = "Enchanter Warden" checked> Enchanter/Warden</label>
+            <label><input type="checkbox" id="catcher-vanguard-checkbox" name = category value = "Catcher Vanguard" checked> Catcher/Vanguard</label>
+            
+            <label><input type="checkbox" id="attack-damage-carry" name = category value = "ADC" checked> attack-damage</label>
+        </div>
+        <!-- Side graph-->
+            <div id = "graph-label">
+            Champion Data Statistics (top 5)
+            </div>
+        <div 
+            id="champion-stats-table">
+        </div>
+
+        <style>
+            #graph-container {
+                display: flex;
+                flex-direction: column;  
+                align-items: center;     
+                margin-bottom: 20px;        
+            }
+
+            #controls-label{
+                text-align: center;   
+                font-size: 40px;      
+                font-weight: bold;      
+                color: #7e7fdf;                     
+            }
+
+            #controls {
+            top: 90px;
+            flex-direction: column;
+            background: rgba(247, 228, 228, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            font-family: Arial, sans-serif;
+            }
+
+            #graph-label {
+                text-align: center;   
+                font-size: 40px;      
+                font-weight: bold;    
+                margin-top: 90px;  
+                color: #aa4bf8;          
+            }
+            #champion-stats-table {
+            display: flex;
+            flex-direction: column;
+            margin-top: 0px;
+            margin-left: 115px;
+            }
+
+            #champion-stats {
+            width: 70%;
+            border-collapse: collapse;
+            text-align: center;
+            margin-top: 10px;
+
+            }
+
+            #champion-stats th, #champion-stats td {
+            padding: 20px;
+            text-align: center;
+            border: 1px solid #ddd;
+            }
+
+            #champion-stats th {
+            background-color: rgba(248, 187, 248, 0.788);
+            font-family: Arial, sans-serif;
+
+            }
+
+            #champion-stats td {
+            background-color: #90c3e0;
+            }
+        </style>
     </div>
-    <!-- Side graph-->
-    <div 
-        id="champion-stats-table">
-    </div>
-    <style>
-        #champion-stats-table {
-        display: flex;
-        justify-content: left;
-        margin-top: 100px;
-        }
 
-        #champion-stats {
-        width: 80%;
-        border-collapse: collapse;
-        text-align: center;
-        }
-
-        #champion-stats th, #champion-stats td {
-        padding: 10px;
-        text-align: center;
-        border: 1px solid #ddd;
-        }
-
-        #champion-stats th {
-        background-color: #f4f4f4;
-        }
-
-        #champion-stats td {
-        background-color: #fafafa;
-        }
-    </style>
     <script>
         let svg; 
         let scaledLocations = []; 
@@ -161,6 +205,7 @@
                 deathCounts[row][col]++;
             });
     
+            
             // Create SVG container 
             if (!svg) {
                 svg = d3.select("body")
@@ -172,6 +217,14 @@
                     .attr("href", "Summoner's_Rift_Minimap.png")
                     .attr("width", MapWidth)
                     .attr("height", MapHeight);
+                
+                svg.append("text")
+                    .attr("x", (MapWidth / 2) - 25) 
+                    .attr("y", 35) 
+                    .attr("font-size", 35)  
+                    .attr("text-anchor", "middle") 
+                    .attr("fill", "magenta") 
+                    .text("Map of Summoner's Rift"); 
             }
     
             // Plot the grid cells (heatmap)
@@ -198,79 +251,25 @@
             console.log("Unmapped Champions:", unmappedChampions);
     
 
-            ///////////////// LOGIC FOR CHECKBOXES ON THE LEFT HAND SIDE ///////////////////////////
+            ///////////////// LOGIC FOR CHECKBOXES /////////////////////////////////////////
             // Attach event listeners to checkboxes (SUPPORTS)
-            document.getElementById("all-supports").addEventListener("change", (event) => {
-                const isChecked = event.target.checked;
 
-                // Set all support boxes to be active
-                document.getElementById("enchanter-warden-checkbox").checked = isChecked;
-                document.getElementById("catcher-vanguard-checkbox").checked = isChecked;
-
-                // Update the heatmap 
-                updateHeatmapBasedOnCheckboxes();
-            });
-
-            // Function to update the state of "all-supports" based on the other checkboxes
-            //checks if all support boxes are checked, and if not, will uncheck the SUPPORT box
-            const updateAllSupportsState = () => {
-                const enchanterChecked = document.getElementById("enchanter-warden-checkbox").checked;
-                const catcherChecked = document.getElementById("catcher-vanguard-checkbox").checked;
-
-                // "all-supports" is checked only if all support boxes are checked
-                document.getElementById("all-supports").checked = enchanterChecked && catcherChecked;
-
-                // Update the heatmap
-                updateHeatmapBasedOnCheckboxes();
-            };
 
             // Attach event listeners to all support boxes
-            document.getElementById("enchanter-warden-checkbox").addEventListener("change", updateAllSupportsState);
-            document.getElementById("catcher-vanguard-checkbox").addEventListener("change", updateAllSupportsState);
+            document.getElementById("enchanter-warden-checkbox").addEventListener("change", updateHeatmapBasedOnCheckboxes);
+            document.getElementById("catcher-vanguard-checkbox").addEventListener("change", updateHeatmapBasedOnCheckboxes);
 
 
 
-
-
-
-
-            // Attach event listeners to checkboxes (ADC's)
-            document.getElementById("adc-checkbox").addEventListener("change", (event) => {
-                const isChecked = event.target.checked;
-
-                // Set all ADC boxes to be active
-                document.getElementById("attack-damage-carry").checked = isChecked;
-
-                // Update the heatmap 
-                updateHeatmapBasedOnCheckboxes();
-
-            // Function to update the state of "all-adc" based on the other checkboxes
-            //checks if all adc boxes are checked, and if not, will uncheck the ADC box
-            const updateAllADCState = () => {
-                const attackDamageChecked = document.getElementById("attack-damage-carry").checked;
-
-                // "all-ADC" is checked only if all adc boxes are checked
-                document.getElementById("adc-checkbox").checked = attackDamageChecked;
-
-                // Update the heatmap
-                updateHeatmapBasedOnCheckboxes();
-            };
-
-            document.getElementById("attack-damage-carry").addEventListener("change", updateAllADCState);
-
-
-
-            });
             document.getElementById("attack-damage-carry").addEventListener("change", updateHeatmapBasedOnCheckboxes);
             ////------------------------------------------------------------------------------/////
 
 
 
-
-
-
             // Initial render of the heatmap with all categories
             updateHeatmapBasedOnCheckboxes(); 
+
+
         }).catch(error => console.error("Error loading or processing data:", error));
     
 
@@ -278,20 +277,13 @@
             // Get selected categories based on current checkboxes
             const selectedCategories = [];
 
-            // If SUPPORT box is checked, check all support boxes
-            if (document.getElementById("all-supports").checked) 
-            {
-                selectedCategories.push("Enchanter/Warden", "Catcher/Vanguard");
-            } 
-            // Else continue normally
-            else 
-            {
+
                 if (document.getElementById("enchanter-warden-checkbox").checked) selectedCategories.push("Enchanter/Warden");
                 if (document.getElementById("catcher-vanguard-checkbox").checked) selectedCategories.push("Catcher/Vanguard");
-            }
+            
 
-            // ADC box logic
-            if (document.getElementById("adc-checkbox").checked) selectedCategories.push("ADC");
+
+                if (document.getElementById("attack-damage-carry").checked) selectedCategories.push("ADC");
 
 
 
@@ -315,7 +307,6 @@
 
             // create new heatmap when different boxes are checked
             updateHeatmap(colorScale, scaledLocations, numRows, numCols, selectedCategories);
-            printAllGoodData();
         }
 
 
@@ -330,7 +321,7 @@
                 return categoryDetails;
             }
 
-        async function loadThreeMostPlayed() {
+        async function loadFiveMostPlayed() {
             // Get the selected categories from the checkboxes
             const Categories = Array.from(document.querySelectorAll('input[name="category"]:checked'))
                 .map(checkbox => checkbox.value) 
@@ -345,32 +336,30 @@
             }
 
         async function printAllGoodData(){
-            const MyTopThree = await loadThreeMostPlayed();
-            console.log("3 most played: ", MyTopThree);
+            const MyTopFive = await loadFiveMostPlayed();
+            console.log("3 most played: ", MyTopFive);
 
             const categoryDetails = await GetProperData(PathToFile);
 
-            MyTopThree.forEach((name) => {  
+            MyTopFive.forEach((name) => {  
                 getSpecificChampionData(name, categoryDetails);   
             });   
               
         }
-        
-        printAllGoodData()
 
 
 
 
         async function createChampionStatsTable(selectedChampions) {
-            const MyTopThree = await loadThreeMostPlayed();
+            const MyTopFive = await loadFiveMostPlayed();
             const categoryDetails = await GetProperData(PathToFile);
 
             // Fetch specific data for each champion
             const FinalData = await Promise.all(
-                MyTopThree.map(name => getSpecificChampionData(name, categoryDetails))
+                MyTopFive.map(name => getSpecificChampionData(name, categoryDetails))
             );
 
-            console.log("FinalData: ", FinalData)
+            //console.log("So Like, where is this final datal really??????????????????????????????? FinalData: ", FinalData)
 
             const tableContainer = document.getElementById('champion-stats-table');
             tableContainer.innerHTML = ''; // Clear previous table if any
@@ -400,13 +389,16 @@
 
             // Define stats and corresponding keys
             const stats = [
-                {label: 'Total number of games', dataKey: 'numberOfGames' },
+                {label: 'Total Number of Games', dataKey: 'numberOfGames' },
                 {label: 'My Deaths Compared to Team', dataKey: 'avgDeathsPerGame' },
                 {label: 'My Kill Participation', dataKey: 'avgKillParticipation' },
                 {label: 'My Win Rate', dataKey: 'winRate' },
                 {label: 'My KDA', dataKey: 'avgKDA' }
             ];
+            
 
+
+            let rowIndex = 0; 
             // Populate table rows for each stat
             for (const stat of stats) {
                 const row = document.createElement('tr');
@@ -414,32 +406,45 @@
                 statCell.textContent = stat.label;
                 row.appendChild(statCell);
 
-                console.log("selected Champions: ", selectedChampions)
-                console.log("My top Three: ", MyTopThree)
+                //console.log("selected Champions: ", selectedChampions);
+                //console.log("My top Five: ", MyTopFive);
 
-                let i = 0;
-                for (const champion of MyTopThree) {
+                let i = 0; 
+                for (const champion of MyTopFive) {
                     const dataCell = document.createElement('td');
-                    
-                    console.log("champion: (inside of for loop) ", MyTopThree[i].champion)
+
+                    //console.log("champion: (inside of for loop) ", MyTopFive[i].champion);
+
                     // Find the specific data for this champion and stat
-                    const championData = FinalData.find(data => data.championName === MyTopThree[i].champion);
+                    const championData = FinalData.find(data => data.championName === MyTopFive[i].champion);
+
                     if (championData) {
-                        const value = championData[stat.dataKey];
-                        dataCell.textContent = value !== undefined ? value : 'N/A';
+                        let value = championData[stat.dataKey];
+                        // Apply percents to rows 2 3 and 4
+                        if (rowIndex >= 1 && rowIndex <= 3) { 
+                            value = value !== undefined ? `${(value * 100).toFixed(2)}%` : 'N/A';
+                        } else {
+                            value = value !== undefined ? value : 'N/A';
+                        }
+
+                        dataCell.textContent = value;
                     } else {
-                        dataCell.textContent = 'N/A'; // Fallback if no data is found
+                        dataCell.textContent = 'N/A'; 
                     }
 
                     row.appendChild(dataCell);
-                    i += 1;
+                    i += 1; // Increment column
                 }
+
                 table.appendChild(row);
+                rowIndex += 1; // Increment row
                 
             }
 
             // Append the completed table to the container
             tableContainer.appendChild(table);
+
+
         }
 
         // Event listener to watch for checkbox changes
@@ -459,9 +464,10 @@
             const selectedChampions = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
                 .map(checkbox => checkbox.id.replace('-checkbox', '')); 
             await createChampionStatsTable(selectedChampions); 
+
         });
 
-
+        
     </script>
 </body>
 </html>

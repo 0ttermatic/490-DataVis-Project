@@ -176,7 +176,7 @@ function getTopChampions(selectedCategories, categoryDetails) {
         totalGames: championCounts[champion]
     }))
     .sort((a, b) => b.totalGames - a.totalGames) 
-    .slice(0, 3); // Get the top 3 
+    .slice(0, 5); // Get the top 3 
 
     
     return topChampions;
@@ -208,9 +208,9 @@ function getSpecificChampionData(championNameObj, categoryDetails) {
 
     // Calculate average deaths per game, average kill participation, and win rate
     const numberOfGames = gameCount
-    const avgDeathsPerGame = (myDeaths / totalDeaths).toFixed(2);
-    const avgKillParticipation = (myParticipation / totalParticipation).toFixed(2);
-    const winRate = (myWins / gameCount).toFixed(2);
+    const avgDeathsPerGame = ((myDeaths / totalDeaths)).toFixed(2);
+    const avgKillParticipation = ((myParticipation / totalParticipation)).toFixed(2);
+    const winRate = ((myWins / gameCount)).toFixed(2) ;
     const avgKDA = (myParticipation / myDeaths).toFixed(2);
 
     console.log(championName, ".  nubmer of games: ", numberOfGames, "my deaths compared to team: ", avgDeathsPerGame,"my participation: ", avgKillParticipation, "my win rate: ", winRate, "my KDA: ", avgKDA)
