@@ -16,9 +16,11 @@
             background-color: #1c1c1c;
             padding-left: 300px;
         }
+
         svg {
             border: 1px solid #ccc;
         }
+
         .death-marker {
             stroke: black;
             stroke-width: 1;
@@ -35,6 +37,7 @@
         border-radius: 5px;
         font-family: Arial, sans-serif;
         }
+
         label {
             display: block;
             margin-bottom: 5px;
@@ -50,11 +53,42 @@
     <!-- Checkboxes-->
     <div id="controls">
         <label><input type="checkbox" id="all-supports" checked> SUPPORT</label>
-        <label><input type="checkbox" id="enchanter-warden-checkbox" checked> Enchanter/Warden</label>
-        <label><input type="checkbox" id="catcher-vanguard-checkbox" checked> Catcher/Vanguard</label>
+        <label><input type="checkbox" id="enchanter-warden-checkbox" name = category value = "Enchanter Warden" checked> Enchanter/Warden</label>
+        <label><input type="checkbox" id="catcher-vanguard-checkbox" name = category value = "Catcher Vanguard" checked> Catcher/Vanguard</label>
         <label><input type="checkbox" id="adc-checkbox" checked> ADC</label>
-        <label><input type="checkbox" id="attack-damage-carry" checked> attack-damage</label>
+        <label><input type="checkbox" id="attack-damage-carry" name = category value = "ADC" checked> attack-damage</label>
     </div>
+    <!-- Side graph-->
+    <div 
+        id="champion-stats-table">
+    </div>
+    <style>
+        #champion-stats-table {
+        display: flex;
+        justify-content: left;
+        margin-top: 100px;
+        }
+
+        #champion-stats {
+        width: 80%;
+        border-collapse: collapse;
+        text-align: center;
+        }
+
+        #champion-stats th, #champion-stats td {
+        padding: 10px;
+        text-align: center;
+        border: 1px solid #ddd;
+        }
+
+        #champion-stats th {
+        background-color: #f4f4f4;
+        }
+
+        #champion-stats td {
+        background-color: #fafafa;
+        }
+    </style>
     <script>
         let svg; 
         let scaledLocations = []; 
@@ -95,6 +129,11 @@
                 }));
             }).flat();
     
+
+
+
+
+
             // Scale the coordinates 
             const scaleCoordinates = (loc) => {
                 const xScaled = (loc.x / 15000) * MapWidth;
@@ -276,7 +315,153 @@
 
             // create new heatmap when different boxes are checked
             updateHeatmap(colorScale, scaledLocations, numRows, numCols, selectedCategories);
+            printAllGoodData();
         }
+
+
+
+        async function GetProperData(path) 
+            {
+                const data = await JsonToVariable(path); 
+
+                const categoryDetails = extractCategoryDetails(data); 
+                //console.log("category details:", categoryDetails);
+
+                return categoryDetails;
+            }
+
+        async function loadThreeMostPlayed() {
+            // Get the selected categories from the checkboxes
+            const Categories = Array.from(document.querySelectorAll('input[name="category"]:checked'))
+                .map(checkbox => checkbox.value) 
+                .flatMap(value => value.split(' '));
+
+            const Details = await GetProperData(PathToFile); 
+
+            console.log("current categories: ", Categories)
+
+            const topChampions = getTopChampions(Categories, Details); 
+            return topChampions;
+            }
+
+        async function printAllGoodData(){
+            const MyTopThree = await loadThreeMostPlayed();
+            console.log("3 most played: ", MyTopThree);
+
+            const categoryDetails = await GetProperData(PathToFile);
+
+            MyTopThree.forEach((name) => {  
+                getSpecificChampionData(name, categoryDetails);   
+            });   
+              
+        }
+        
+        printAllGoodData()
+
+
+
+
+        async function createChampionStatsTable(selectedChampions) {
+            const MyTopThree = await loadThreeMostPlayed();
+            const categoryDetails = await GetProperData(PathToFile);
+
+            // Fetch specific data for each champion
+            const FinalData = await Promise.all(
+                MyTopThree.map(name => getSpecificChampionData(name, categoryDetails))
+            );
+
+            console.log("FinalData: ", FinalData)
+
+            const tableContainer = document.getElementById('champion-stats-table');
+            tableContainer.innerHTML = ''; // Clear previous table if any
+
+            if (selectedChampions.length === 0) {
+                tableContainer.innerHTML = '<p>No champions selected</p>';
+                return;
+            }
+
+            // Create a new table element
+            const table = document.createElement('table');
+            table.id = 'champion-stats';
+
+            // Create the header row
+            const headerRow = document.createElement('tr');
+            const headerStatsCell = document.createElement('th');
+            headerStatsCell.textContent = 'Stats';
+            headerRow.appendChild(headerStatsCell);
+
+
+            FinalData.forEach(championData => {
+                const th = document.createElement('th');
+                th.textContent = championData.championName;
+                headerRow.appendChild(th);
+            });
+            table.appendChild(headerRow);
+
+            // Define stats and corresponding keys
+            const stats = [
+                {label: 'Total number of games', dataKey: 'numberOfGames' },
+                {label: 'My Deaths Compared to Team', dataKey: 'avgDeathsPerGame' },
+                {label: 'My Kill Participation', dataKey: 'avgKillParticipation' },
+                {label: 'My Win Rate', dataKey: 'winRate' },
+                {label: 'My KDA', dataKey: 'avgKDA' }
+            ];
+
+            // Populate table rows for each stat
+            for (const stat of stats) {
+                const row = document.createElement('tr');
+                const statCell = document.createElement('td');
+                statCell.textContent = stat.label;
+                row.appendChild(statCell);
+
+                console.log("selected Champions: ", selectedChampions)
+                console.log("My top Three: ", MyTopThree)
+
+                let i = 0;
+                for (const champion of MyTopThree) {
+                    const dataCell = document.createElement('td');
+                    
+                    console.log("champion: (inside of for loop) ", MyTopThree[i].champion)
+                    // Find the specific data for this champion and stat
+                    const championData = FinalData.find(data => data.championName === MyTopThree[i].champion);
+                    if (championData) {
+                        const value = championData[stat.dataKey];
+                        dataCell.textContent = value !== undefined ? value : 'N/A';
+                    } else {
+                        dataCell.textContent = 'N/A'; // Fallback if no data is found
+                    }
+
+                    row.appendChild(dataCell);
+                    i += 1;
+                }
+                table.appendChild(row);
+                
+            }
+
+            // Append the completed table to the container
+            tableContainer.appendChild(table);
+        }
+
+        // Event listener to watch for checkbox changes
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.addEventListener('change', async () => {
+                // Get the selected champions from the checkboxes
+                const selectedChampions = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
+                    .map(checkbox => checkbox.id.replace('-checkbox', '')); 
+
+                // Create the table with selected champions
+                await createChampionStatsTable(selectedChampions);
+            });
+        });
+
+        // Initial table creation when the page loads 
+        document.addEventListener('DOMContentLoaded', async () => {
+            const selectedChampions = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
+                .map(checkbox => checkbox.id.replace('-checkbox', '')); 
+            await createChampionStatsTable(selectedChampions); 
+        });
+
+
     </script>
 </body>
 </html>

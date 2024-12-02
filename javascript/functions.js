@@ -9,37 +9,36 @@ const ChampionRoles = {
     "Seraphine": ["Enchanter"],
     "Sona": ["Enchanter"],
     "Soraka": ["Enchanter"],
-    "Taric": ["Enchanter", "Warden"],
+    "Taric": ["Warden"],
     "Yuumi": ["Enchanter"],
     "Zilean": ["Enchanter"],
 
 
     "Bard": ["Catcher"],
-    "Blitzcrank": ["Catcher", "Vanguard"],  
+    "Blitzcrank": ["Catcher"],  
     "Lux": ["Catcher"],
     "Jhin": ["Catcher"],
     "Morgana": ["Catcher"],
     "Neeko": ["Catcher"],
     "Pantheon": ["Catcher"],
     "Pyke": ["Catcher"],
-    "Rakan": ["Catcher", "Vanguard"], 
-    "Thresh": ["Catcher", "Warden"],  
     "Zyra": ["Catcher"],
     "Swain": ["Catcher"],
 
 
-    "Alistar": ["Vanguard", "Warden"],  
     "Amumu": ["Vanguard"],
     "Leona": ["Vanguard"],
     "Maokai": ["Vanguard"],
     "Nautilus": ["Vanguard"],
+    "Rakan": ["Vanguard"], 
     "Rell": ["Vanguard"],
 
-    
+    "Alistar": ["Warden"],     
     "Braum": ["Warden"],
     "Poppy": ["Warden"],
     "Renata": ["Warden"],
     "TahmKench": ["Warden"],
+    "Thresh": ["Warden"],  
 
 
     "Aphelios": ["ADC"],
@@ -116,14 +115,17 @@ function CreateChampionMap(data)
 
 //Extract the champion data to be used by d3 functions
 // * data:                  the processed .json file
-// - categoryDetails:       creates an array with category, win, and gamelength if the champion is in the ChampionRoles list at the top of the file
+// - categoryDetails:       creates an array with useful data to be used in future d3 functions
 function extractCategoryDetails(data) {
     const categoryDetails = [];
 
     data.forEach(game => {
         const { gameDurationMinutes, championName } = game;
         const winLoss = game["Win/Loss"]; // Access the property with brackets
-
+        const myParticipation = game["Mykills"] + game["MYassists"];
+        const teamKills = game["totalMyteamKills"];
+        const myDeaths = game["MYdeaths"];
+        const teamDeaths = game["totalKills-Ingame"] - game["totalMyteamKills"];
         // Convert game duration to minutes
         const gameLength = Math.floor(gameDurationMinutes);
 
@@ -131,7 +133,12 @@ function extractCategoryDetails(data) {
         if (ChampionRoles[championName]) {
             ChampionRoles[championName].forEach(category => {
                 categoryDetails.push({
+                    championName,
                     category,
+                    myParticipation,
+                    teamKills,
+                    myDeaths,
+                    teamDeaths,
                     win: winLoss === "Win", 
                     gameLength
                 });
@@ -144,8 +151,83 @@ function extractCategoryDetails(data) {
 
 
 
+function getTopChampions(selectedCategories, categoryDetails) {
+    // Filter the data based on selected categories
+    const filteredData = categoryDetails.filter(match => {
+        return selectedCategories.includes(match.category); // Match category to selected categories
+    });
+
+    // Count occurrences of each champion
+    const championCounts = {};
+
+    filteredData.forEach(match => {
+        const champion = match.championName;
+        if (!championCounts[champion]) {
+            championCounts[champion] = 0;
+        }
+        championCounts[champion]++;
+    });
+
+
+    // Sort champions by the number of games played 
+    const topChampions = Object.keys(championCounts)
+    .map(champion => ({
+        champion,
+        totalGames: championCounts[champion]
+    }))
+    .sort((a, b) => b.totalGames - a.totalGames) 
+    .slice(0, 3); // Get the top 3 
+
+    
+    return topChampions;
+}
+
+function getSpecificChampionData(championNameObj, categoryDetails) {
+
+    let championName = championNameObj.champion;
+
+    // Filter data for the given champion name
+    const championData = categoryDetails.filter(item => item.championName === championName);
+
+
+    // Calculate totals based on information from categoryDetals
+    let myDeaths = 0;
+    let myParticipation = 0;
+    let myWins = 0;
+    let totalDeaths = 0;
+    let totalParticipation = 0;
+    const gameCount = championData.length;
+
+    championData.forEach(item => {
+        myDeaths += item.myDeaths
+        myParticipation += item.myParticipation
+        totalDeaths += item.teamDeaths;
+        totalParticipation += item.teamKills;
+        if (item.win) myWins += 1; 
+    });
+
+    // Calculate average deaths per game, average kill participation, and win rate
+    const numberOfGames = gameCount
+    const avgDeathsPerGame = (myDeaths / totalDeaths).toFixed(2);
+    const avgKillParticipation = (myParticipation / totalParticipation).toFixed(2);
+    const winRate = (myWins / gameCount).toFixed(2);
+    const avgKDA = (myParticipation / myDeaths).toFixed(2);
+
+    console.log(championName, ".  nubmer of games: ", numberOfGames, "my deaths compared to team: ", avgDeathsPerGame,"my participation: ", avgKillParticipation, "my win rate: ", winRate, "my KDA: ", avgKDA)
+    // Return the stats as an object
+    return {
+        championName,
+        numberOfGames,
+        avgDeathsPerGame,
+        avgKillParticipation,
+        avgKDA,
+        winRate
+    };
+
+
+}
 //Extract the champion data to be used by d3 functions
-// * categoryDetails:                  the map of champions to their roles and t
+// * categoryDetails:       the map of champions to their roles and t
 // - EnchanterWardenData:   Data on the champions in the Enchanter/Warden group at the top of this file
 // - CatcherVanguardData:   Data on the champions in the Catcher/Vanguard group at the top of this file
 // - ADCData:               Data on the champions in the ADC group at the top of this file
@@ -253,10 +335,15 @@ function filterDataBySelectedCategories(data, selectedCategories) {
         "ADC": ["ADC"],
     };
 
+
     return data.filter(d => {
         const roles = ChampionRoles[d.championName];
+        //DEBUGGING
+
         return roles && roles.some(role => selectedCategories.some(cat => validRoles[cat].includes(role)));
     });
+
+    
 }
 
 
@@ -270,13 +357,13 @@ function filterDataBySelectedCategories(data, selectedCategories) {
 // * selectedCategories:        The categories to check for (passed to filterDataBySelectedCategories)
 function updateHeatmap(colorScale, scaledLocations, numRows, numCols, selectedCategories) {
     //DEBUGGING
-    console.log("scaledLocations inside updateHeatMap", scaledLocations);
-    console.log("selectedCategories inside updateheatMap", selectedCategories);
+    //console.log("scaledLocations inside updateHeatMap", scaledLocations);
+    //console.log("selectedCategories inside updateheatMap", selectedCategories);
 
     const filteredLocations = filterDataBySelectedCategories(scaledLocations, selectedCategories);
 
     //DEBUGGING
-    console.log("filteredLocations inside updateHeatMap", filteredLocations);
+    //console.log("filteredLocations inside updateHeatMap", filteredLocations);
 
 
     // Recalculate death counts for the grid

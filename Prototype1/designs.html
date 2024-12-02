@@ -40,7 +40,7 @@
                 const data = await JsonToVariable(path); // Get the raw data
 
                 const categoryDetails = extractCategoryDetails(data); // Extract category details
-                console.log(categoryDetails);
+                console.log("category details:", categoryDetails);
 
                 const winRateData = processWinRateData(categoryDetails); // Process data for win rates
                 console.log(winRateData);
