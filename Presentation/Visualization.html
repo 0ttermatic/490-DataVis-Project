@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Death Locations</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="../javascript/functions.js"></script> 
+    <style>
+        body {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #1c1c1c;
+            padding-left: 50px;
+        }
+
+        #graph-label {
+                  text-align: center;   
+                font-size: 40px;      
+                font-weight: bold;      
+                color: #7e7fdf;               
+        }
+
+        svg {
+            border: 1px solid #ccc;
+            display: block;
+        }
+
+        .death-marker {
+            stroke: black;
+            stroke-width: 1;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #000;
+        }
+
+        #attack-damage-carry {
+            margin-top: 35px; 
+        }
+    </style>
+</head>   
+<body>
+    <div id = "graph-container">
+
+        <!-- Checkboxes-->
+        <div id = "controls-label">
+            Checkbox Control
+         </div>
+
+        <div id="controls">
+            <label><input type="checkbox" id="enchanter-warden-checkbox" name = category value = "Enchanter Warden" checked> Enchanter/Warden</label>
+            <label><input type="checkbox" id="catcher-vanguard-checkbox" name = category value = "Catcher Vanguard" checked> Catcher/Vanguard</label>
+            
+            <label><input type="checkbox" id="attack-damage-carry" name = category value = "ADC" checked> attack-damage</label>
+        </div>
+        <!-- Side graph-->
+            <div id = "graph-label">
+            Champion Data Statistics (top 5)
+            </div>
+        <div 
+            id="champion-stats-table">
+        </div>
+
+        <style>
+            #graph-container {
+                display: flex;
+                flex-direction: column;  
+                align-items: center;     
+                margin-bottom: 20px;        
+            }
+
+            #controls-label{
+                text-align: center;   
+                font-size: 40px;      
+                font-weight: bold;      
+                color: #7e7fdf;                     
+            }
+
+            #controls {
+            top: 90px;
+            flex-direction: column;
+            background: rgba(247, 228, 228, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            font-family: Arial, sans-serif;
+            }
+
+            #graph-label {
+                text-align: center;   
+                font-size: 40px;      
+                font-weight: bold;    
+                margin-top: 90px;  
+                color: #aa4bf8;          
+            }
+            #champion-stats-table {
+            display: flex;
+            flex-direction: column;
+            margin-top: 0px;
+            margin-left: 50px;
+            }
+
+            #champion-stats {
+            width: 70%;
+            border-collapse: collapse;
+            text-align: center;
+            margin-top: 10px;
+
+            }
+
+            #champion-stats th, #champion-stats td {
+            padding: 20px;
+            text-align: center;
+            border: 1px solid #ddd;
+            }
+
+            #champion-stats th {
+            background-color: rgba(248, 187, 248, 0.788);
+            font-family: Arial, sans-serif;
+
+            }
+
+            #champion-stats td {
+            background-color: #90c3e0;
+            }
+        </style>
+    </div>
+
+    <script>
+        let svg; 
+        let scaledLocations = []; 
+        
+        let quad0 = 0
+        let quad1 = 1
+        let quad2 = 2
+        let quad3 = 3
+        let quad4 = 4
+        let quad5 = 5
+        let quad6 = 6
+
+        // Path to the .json file
+        const PathToFile = "../Data_Gathering/match_data_FINAL.json"; 
+    
+        // Map Width and Height
+        const MapHeight = 594;
+        const MapWidth = 594;
+        const GridSize = 22; // Grid size 
+        const numCols = MapWidth / GridSize; // Number of columns in the grid
+        const numRows = MapHeight / GridSize; // Number of rows in the grid
+    
+        // Color scale for the heatmap
+        let colorScale = d3.scaleLinear()
+            .domain([quad0, quad1, quad2, quad3, quad4, quad5, quad6]) // Domain 
+            .range(["rgba(255, 255, 255, 0)", "rgba(255, 244, 0, 1)", "rgba(255, 210, 0, 1)", "rgba(255, 150, 0, 1)", "rgba(255, 130, 0, 1)", "rgba(255, 75, 0, 1)", "rgba(255, 0, 0, 1)"]); // RGBA with capacity
+    
+        // Load and process the data
+        JsonToVariable(PathToFile).then(data => {
+    
+            // Extract death locations and the side from the data
+            const deathLocationsWithSide = data.map(entry => {
+                return entry.deathLocations.map(loc => ({
+                    x: loc.x, // Attach x coordinate
+                    y: loc.y, // Attach y coordinate
+                    side: entry.side, // Attach side value 
+                    championName: entry.championName // Attach champion name
+                }));
+            }).flat();
+    
+
+
+
+
+
+            // Scale the coordinates 
+            const scaleCoordinates = (loc) => {
+                const xScaled = (loc.x / 15000) * MapWidth;
+                const yScaled = MapHeight - (loc.y / 15000) * MapHeight;
+                const row = Math.floor(yScaled / GridSize);
+                const col = Math.floor(xScaled / GridSize);
+                return {
+                    x: xScaled,
+                    y: yScaled,
+                    side: loc.side,
+                    championName: loc.championName,
+                    row: row,
+                    col: col
+                };
+            };
+    
+            scaledLocations = deathLocationsWithSide.map(scaleCoordinates);
+            console.log("Scaled Locations:", scaledLocations);
+    
+            const deathCounts = Array.from({ length: numRows }, () => Array(numCols).fill(0));
+            // Number of deaths in each grid cell
+            scaledLocations.forEach(loc => {
+                const row = Math.floor(loc.y / GridSize);
+                const col = Math.floor(loc.x / GridSize);
+                deathCounts[row][col]++;
+            });
+    
+            
+            // Create SVG container 
+            if (!svg) {
+                svg = d3.select("body")
+                    .append("svg")
+                    .attr("width", MapWidth)
+                    .attr("height", MapHeight);
+    
+                svg.append("image")
+                    .attr("href", "Summoner's_Rift_Minimap2.png")
+                    .attr("width", MapWidth)
+                    .attr("height", MapHeight);
+                
+                svg.append("text")
+                    .attr("x", (MapWidth / 2) - 25) 
+                    .attr("y", 25) 
+                    .attr("font-size", 25)  
+                    .attr("text-anchor", "middle") 
+                    .attr("fill", "magenta") 
+                    .text("Map of Summoner's Rift"); 
+            }
+    
+            // Plot the grid cells (heatmap)
+            svg.selectAll(".grid-cell")
+                .data(d3.range(numRows * numCols))
+                .enter()
+                .append("rect")
+                .attr("class", "grid-cell")
+                .attr("x", d => (d % numCols) * GridSize)
+                .attr("y", d => Math.floor(d / numCols) * GridSize)
+                .attr("width", GridSize)
+                .attr("height", GridSize)
+                .style("fill", d => {
+                    const row = Math.floor(d / numCols);
+                    const col = d % numCols;
+                    const deathCount = deathCounts[row][col];
+                    return colorScale(deathCount); // Set color based on the death count
+                })
+                .style("stroke", "none")
+                .style("filter", "blur(14px)"); // Apply blur effect
+    
+            // Log unmapped champions
+            const unmappedChampions = scaledLocations.filter(d => !ChampionRoles[d.championName]);
+            console.log("Unmapped Champions:", unmappedChampions);
+    
+
+            ///////////////// LOGIC FOR CHECKBOXES /////////////////////////////////////////
+            // Attach event listeners to checkboxes (SUPPORTS)
+
+
+            // Attach event listeners to all support boxes
+            document.getElementById("enchanter-warden-checkbox").addEventListener("change", updateHeatmapBasedOnCheckboxes);
+            document.getElementById("catcher-vanguard-checkbox").addEventListener("change", updateHeatmapBasedOnCheckboxes);
+
+
+
+            document.getElementById("attack-damage-carry").addEventListener("change", updateHeatmapBasedOnCheckboxes);
+            ////------------------------------------------------------------------------------/////
+
+
+
+            // Initial render of the heatmap with all categories
+            updateHeatmapBasedOnCheckboxes(); 
+
+
+        }).catch(error => console.error("Error loading or processing data:", error));
+    
+
+        function updateHeatmapBasedOnCheckboxes() {
+            // Get selected categories based on current checkboxes
+            const selectedCategories = [];
+
+
+                if (document.getElementById("enchanter-warden-checkbox").checked) selectedCategories.push("Enchanter/Warden");
+                if (document.getElementById("catcher-vanguard-checkbox").checked) selectedCategories.push("Catcher/Vanguard");
+            
+
+
+                if (document.getElementById("attack-damage-carry").checked) selectedCategories.push("ADC");
+
+
+
+            let numberForColormap = filterDataBySelectedCategories(scaledLocations, selectedCategories).length;
+
+            // Quadrants to make sure data is scaled correctly no matter the data size
+            quad0 = Math.ceil(.0015 * numberForColormap);
+            quad1 = Math.ceil(.0030 * numberForColormap);
+            quad2 = Math.ceil(.0040 * numberForColormap);
+            quad3 = Math.ceil(.0050 * numberForColormap);
+            quad4 = Math.ceil(.0062 * numberForColormap);
+            quad5 = Math.ceil(.0090 * numberForColormap);
+            quad6 = Math.ceil(.0270 * numberForColormap);
+
+            console.log(quad0, quad1, quad2, quad3, quad4, quad5, quad6, numberForColormap)
+
+
+            let colorScale = d3.scaleLinear()
+            .domain([quad0, quad1, quad2, quad3, quad4, quad5, quad6]) // Domain 
+            .range(["rgba(255, 255, 255, 0)", "rgba(255, 244, 0, 1)", "rgba(255, 210, 0, 1)", "rgba(255, 150, 0, 1)", "rgba(255, 130, 0, 1)", "rgba(255, 75, 0, 1)", "rgba(255, 0, 0, 1)"]); // RGBA with opacity
+
+            // create new heatmap when different boxes are checked
+            updateHeatmap(colorScale, scaledLocations, numRows, numCols, selectedCategories);
+        }
+
+
+
+        async function GetProperData(path) 
+            {
+                const data = await JsonToVariable(path); 
+
+                const categoryDetails = extractCategoryDetails(data); 
+                //console.log("category details:", categoryDetails);
+
+                return categoryDetails;
+            }
+
+        async function loadFiveMostPlayed() {
+            // Get the selected categories from the checkboxes
+            const Categories = Array.from(document.querySelectorAll('input[name="category"]:checked'))
+                .map(checkbox => checkbox.value) 
+                .flatMap(value => value.split(' '));
+
+            const Details = await GetProperData(PathToFile); 
+
+            console.log("current categories: ", Categories)
+
+            const topChampions = getTopChampions(Categories, Details); 
+            return topChampions;
+            }
+
+        async function printAllGoodData(){
+            const MyTopFive = await loadFiveMostPlayed();
+            console.log("3 most played: ", MyTopFive);
+
+            const categoryDetails = await GetProperData(PathToFile);
+
+            MyTopFive.forEach((name) => {  
+                getSpecificChampionData(name, categoryDetails);   
+            });   
+              
+        }
+
+
+
+
+        async function createChampionStatsTable(selectedChampions) {
+            const MyTopFive = await loadFiveMostPlayed();
+            const categoryDetails = await GetProperData(PathToFile);
+
+            // Fetch specific data for each champion
+            const FinalData = await Promise.all(
+                MyTopFive.map(name => getSpecificChampionData(name, categoryDetails))
+            );
+
+            //console.log("So Like, where is this final datal really??????????????????????????????? FinalData: ", FinalData)
+
+            const tableContainer = document.getElementById('champion-stats-table');
+            tableContainer.innerHTML = ''; // Clear previous table if any
+
+            if (selectedChampions.length === 0) {
+                tableContainer.innerHTML = '<p>No champions selected</p>';
+                return;
+            }
+
+            // Create a new table element
+            const table = document.createElement('table');
+            table.id = 'champion-stats';
+
+            // Create the header row
+            const headerRow = document.createElement('tr');
+            const headerStatsCell = document.createElement('th');
+            headerStatsCell.textContent = 'Stats';
+            headerRow.appendChild(headerStatsCell);
+
+
+            FinalData.forEach(championData => {
+                const th = document.createElement('th');
+                th.textContent = championData.championName;
+                headerRow.appendChild(th);
+            });
+            table.appendChild(headerRow);
+
+            // Define stats and corresponding keys
+            const stats = [
+                {label: 'Total Number of Games', dataKey: 'numberOfGames' },
+                {label: 'My Deaths Compared to Team', dataKey: 'avgDeathsPerGame' },
+                {label: 'My Kill Participation', dataKey: 'avgKillParticipation' },
+                {label: 'My Win Rate', dataKey: 'winRate' },
+                {label: 'My KDA', dataKey: 'avgKDA' }
+            ];
+            
+
+
+            let rowIndex = 0; 
+            // Populate table rows for each stat
+            for (const stat of stats) {
+                const row = document.createElement('tr');
+                const statCell = document.createElement('td');
+                statCell.textContent = stat.label;
+                row.appendChild(statCell);
+
+                //console.log("selected Champions: ", selectedChampions);
+                //console.log("My top Five: ", MyTopFive);
+
+                let i = 0; 
+                for (const champion of MyTopFive) {
+                    const dataCell = document.createElement('td');
+
+                    //console.log("champion: (inside of for loop) ", MyTopFive[i].champion);
+
+                    // Find the specific data for this champion and stat
+                    const championData = FinalData.find(data => data.championName === MyTopFive[i].champion);
+
+                    if (championData) {
+                        let value = championData[stat.dataKey];
+                        // Apply percents to rows 2 3 and 4
+                        if (rowIndex >= 1 && rowIndex <= 3) { 
+                            value = value !== undefined ? `${(value * 100).toFixed(2)}%` : 'N/A';
+                        } else {
+                            value = value !== undefined ? value : 'N/A';
+                        }
+
+                        dataCell.textContent = value;
+                    } else {
+                        dataCell.textContent = 'N/A'; 
+                    }
+
+                    row.appendChild(dataCell);
+                    i += 1; // Increment column
+                }
+
+                table.appendChild(row);
+                rowIndex += 1; // Increment row
+                
+            }
+
+            // Append the completed table to the container
+            tableContainer.appendChild(table);
+
+
+        }
+
+        // Event listener to watch for checkbox changes
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.addEventListener('change', async () => {
+                // Get the selected champions from the checkboxes
+                const selectedChampions = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
+                    .map(checkbox => checkbox.id.replace('-checkbox', '')); 
+
+                // Create the table with selected champions
+                await createChampionStatsTable(selectedChampions);
+            });
+        });
+
+        // Initial table creation when the page loads 
+        document.addEventListener('DOMContentLoaded', async () => {
+            const selectedChampions = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
+                .map(checkbox => checkbox.id.replace('-checkbox', '')); 
+            await createChampionStatsTable(selectedChampions); 
+
+        });
+
+        
+    </script>
+</body>
+</html>
+
+
+
+
